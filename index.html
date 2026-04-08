@@ -48,8 +48,14 @@
 <script>
 async function updateSentinel() {
     try {
-        const r = await fetch('https://n8n.planneruniversedigital.com/webhook/sentinel-data');
-        const d = await r.json();
+        const targetUrl = 'https://n8n.planneruniversedigital.com/webhook/sentinel-data';
+        // Usamos el proxy AllOrigins para que el navegador no bloquee el asalto
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+        const response = await r.json();
+        
+        // n8n entrega los datos dentro de 'contents' cuando usamos el proxy
+        const dataRaw = JSON.parse(response.contents);
+        const d = Array.isArray(dataRaw) ? dataRaw[0] : dataRaw;
         
         const gasto = parseFloat(d.Invertido || d.spend || 0);
         const clics = parseInt(d.Click || d.inline_link_clicks || 0);
