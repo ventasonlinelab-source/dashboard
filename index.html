@@ -4,13 +4,19 @@
     <meta charset="UTF-8">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #050505; color: #00ff88; font-family: 'Orbitron', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { background: #050505; color: #00ff88; font-family: 'Orbitron', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 90%; }
         .card { background: rgba(20,20,20,0.9); border: 2px solid #333; padding: 25px; border-radius: 10px; text-align: center; box-shadow: 0 0 20px rgba(0,255,136,0.1); transition: 0.3s; }
         .card:hover { border-color: #00ff88; box-shadow: 0 0 30px rgba(0,255,136,0.3); }
         .label { color: #888; font-size: 12px; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
         .value { font-size: 35px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00ff88; }
         .sector-title { grid-column: span 3; text-align: center; font-size: 20px; letter-spacing: 5px; color: #00ff88; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        /* BOTÓN DE COMANDO ACTIVADO */
+        .btn-container { grid-column: span 3; display: flex; justify-content: center; margin-top: 20px; }
+        .refresh-btn { background: transparent; border: 2px solid #00ff88; color: #00ff88; font-family: 'Orbitron', sans-serif; padding: 15px 45px; font-size: 14px; letter-spacing: 4px; cursor: pointer; border-radius: 5px; transition: 0.3s; box-shadow: 0 0 15px rgba(0,255,136,0.1); text-transform: uppercase; font-weight: bold; }
+        .refresh-btn:hover { background: #00ff88; color: #050505; box-shadow: 0 0 40px rgba(0,255,136,0.6); transform: translateY(-2px); }
+        .refresh-btn:active { transform: scale(0.95); opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -43,17 +49,19 @@
         <div class="label">REVENUE</div>
         <div class="value">0€</div>
     </div>
+
+    <div class="btn-container">
+        <button class="refresh-btn" onclick="forceUpdate()">ACTUALIZAR SISTEMA</button>
+    </div>
 </div>
 
 <script>
 async function updateSentinel() {
     try {
         const targetUrl = 'https://n8n.planneruniversedigital.com/webhook/sentinel-data';
-        // Usamos el proxy AllOrigins para que el navegador no bloquee el asalto
         const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
         const response = await r.json();
         
-        // n8n entrega los datos dentro de 'contents' cuando usamos el proxy
         const dataRaw = JSON.parse(response.contents);
         const d = Array.isArray(dataRaw) ? dataRaw[0] : dataRaw;
         
@@ -67,6 +75,32 @@ async function updateSentinel() {
         
     } catch (e) { console.error("Error en el asalto:", e); }
 }
+
+async function forceUpdate() {
+    const btn = document.querySelector('.refresh-btn');
+    const originalText = btn.innerText;
+    btn.innerText = 'FORZANDO ACTUALIZACIÓN...';
+    btn.disabled = true;
+    
+    try {
+        // Disparo al Webhook que despierta a Facebook Ads en n8n
+        await fetch('https://n8n.planneruniversedigital.com/webhook/refresh-ads-manual', { method: 'POST' });
+        
+        // Espera de 2.5s para que la API de Meta procese y la base de datos se actualice antes de leer
+        setTimeout(async () => {
+            await updateSentinel();
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }, 2500);
+        
+    } catch (e) { 
+        console.error("Fallo en el comando:", e);
+        btn.innerText = 'ERROR EN LÍNEA';
+        setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 3000);
+    }
+}
+
+// Carga inicial y bucle de refresco pasivo cada 30s
 updateSentinel();
 setInterval(updateSentinel, 30000);
 </script>
