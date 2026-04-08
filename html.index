@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; color: #00ff88; font-family: 'Orbitron', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 90%; }
+        .card { background: rgba(20,20,20,0.9); border: 2px solid #333; padding: 25px; border-radius: 10px; text-align: center; box-shadow: 0 0 20px rgba(0,255,136,0.1); transition: 0.3s; }
+        .card:hover { border-color: #00ff88; box-shadow: 0 0 30px rgba(0,255,136,0.3); }
+        .label { color: #888; font-size: 12px; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
+        .value { font-size: 35px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00ff88; }
+        .sector-title { grid-column: span 3; text-align: center; font-size: 20px; letter-spacing: 5px; color: #00ff88; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="grid">
+    <div class="sector-title">SENTINEL 11S - COMMAND CENTER [ACTIVE]</div>
+    
+    <div class="card">
+        <div class="label">INVERSIÓN TOTAL</div>
+        <div class="value" id="gasto">0.00€</div>
+    </div>
+    <div class="card">
+        <div class="label">IMPACTO (CLICKS)</div>
+        <div class="value" id="clics">0</div>
+    </div>
+    <div class="card">
+        <div class="label">COSTE POR CLIC</div>
+        <div class="value" id="cpc">0.00€</div>
+    </div>
+
+    <div class="card" style="opacity: 0.5;">
+        <div class="label">LEADS</div>
+        <div class="value">0</div>
+    </div>
+    <div class="card" style="opacity: 0.5;">
+        <div class="label">CONVERSIÓN</div>
+        <div class="value">0%</div>
+    </div>
+    <div class="card" style="opacity: 0.5;">
+        <div class="label">REVENUE</div>
+        <div class="value">0€</div>
+    </div>
+</div>
+
+<script>
+async function updateSentinel() {
+    try {
+        const r = await fetch('https://n8n.planneruniversedigital.com/webhook/sentinel-data');
+        const d = await r.json();
+        
+        const gasto = parseFloat(d.Invertido || d.spend || 0);
+        const clics = parseInt(d.Click || d.inline_link_clicks || 0);
+        const cpc = clics > 0 ? (gasto / clics).toFixed(2) : 0;
+
+        document.getElementById('gasto').innerText = gasto.toFixed(2) + '€';
+        document.getElementById('clics').innerText = clics;
+        document.getElementById('cpc').innerText = cpc + '€';
+        
+    } catch (e) { console.error("Error en el asalto:", e); }
+}
+updateSentinel();
+setInterval(updateSentinel, 30000);
+</script>
+
+</body>
+</html>
