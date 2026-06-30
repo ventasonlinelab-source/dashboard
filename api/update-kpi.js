@@ -1,19 +1,14 @@
+import Redis from 'ioredis';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-
-  const url = `${process.env.REDIS_URL}/set/kpi_data`;
   
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.REDIS_PASSWORD || ''}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(req.body),
-    });
-
-    return res.status(200).json({ status: "Guardado" });
+    const redis = new Redis(process.env.REDIS_URL);
+    await redis.set('kpi_data', JSON.stringify(req.body));
+    await redis.quit();
+    
+    return res.status(200).json({ status: "Guardado correctamente" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
