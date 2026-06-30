@@ -1,22 +1,20 @@
-import { Redis } from '@upstash/redis';
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: "Método no permitido" });
-  }
+  if (req.method !== 'POST') return res.status(405).end();
 
+  const url = `${process.env.REDIS_URL}/set/kpi_data`;
+  
   try {
-    // Esto conecta directamente con tu REDIS_URL que ya tienes configurada
-    const redis = Redis.fromEnv();
-    
-    // Guardamos los datos
-    await redis.set('kpi_data', req.body);
-    
-    return res.status(200).json({ status: "Guardado en Redis correctamente" });
-  } catch (error) {
-    return res.status(500).json({ 
-      error: "Error al conectar con Redis", 
-      details: error.message 
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.REDIS_PASSWORD || ''}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body),
     });
+
+    return res.status(200).json({ status: "Guardado" });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 }
